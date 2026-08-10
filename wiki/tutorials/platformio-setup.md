@@ -9,7 +9,8 @@ updated: 2026-08-10
 # PlatformIO 開発環境セットアップ
 
 Arduino スケッチを PlatformIO で書くための環境構築メモ。
-本プロジェクト ([[arduino-uno-r4-minima]] + [[28byj-48]]) での実績ベース。
+本プロジェクト ([[arduino-uno-r4-wifi]] + [[28byj-48]] + [[mb102]]) での実績ベース。
+([[arduino-uno-r4-minima]] から 2026-08-10 に方針変更)
 
 ## プロジェクト構成
 
@@ -25,9 +26,9 @@ Arduino スケッチを PlatformIO で書くための環境構築メモ。
 ## platformio.ini
 
 ```ini
-[env:uno_r4_minima]
+[env:uno_r4_wifi]
 platform = renesas-ra
-board = uno_r4_minima
+board = uno_r4_wifi
 framework = arduino
 monitor_speed = 9600
 lib_deps =
@@ -36,8 +37,10 @@ platform_packages =
   platformio/toolchain-gccarmnoneeabi@~1.120301.0
 ```
 
-- `board = uno_r4_minima` — [[arduino-uno-r4-minima]] (RA4M1, 256KB Flash / 32KB RAM)
-- `lib_deps` — Stepper ライブラリは framework に同梱されていないため明示的に追加
+- `board = uno_r4_wifi` — [[arduino-uno-r4-wifi]] (RA4M1 + ESP32-S3, 256KB Flash / 32KB RAM)
+- `lib_deps` — Stepper ライブラリは framework に同梱されていないため明示的に追加。
+  WiFi 機能を使う分には追加 lib 不要 ([[api/wifis3-library|WiFiS3]] /
+  [[api/webserver-library|WebServer]] はボードパッケージに同梱)
 - `platform_packages` — **aarch64 対応のための必須記述** (後述)
 
 ## ビルド・書き込み・モニタ
@@ -87,14 +90,59 @@ framework-arduinorenesas-uno に同梱されていない。
 
 **解決**: `lib_deps` に `arduino-libraries/Stepper` を追加する。
 
+### WiFiS3 で `byte` 曖昧性エラー (GCC 12.3.1)
+
+**症状**: `pio run` 時に以下:
+
+```
+error: reference to 'byte' is ambiguous
+note: 'enum class std::byte' (from <cmath> via ArduinoAPI.h)
+note: 'typedef uint8_t byte' (from Common.h)
+```
+
+**原因**: `framework-arduinorenesas-uno/libraries/WiFiS3/src/WiFiSSLClient.{h,cpp}`
+が `const byte cert[]` のような生 Arduino `byte` を使っており、
+GCC 12.3.1 の `<cmath>` が `std::byte` を持っていて衝突する既知バグ。
+(SSL 機能を使っていなくても WiFiS3 ライブラリ全体がコンパイル対象になるため影響する。)
+
+**解決 (暫定パッチ)**: `byte` を `uint8_t` に置換する。1 度だけでいい:
+
+```bash
+F=$(ls -d ~/.platformio/packages/framework-arduinorenesas-uno* | head -1)/libraries/WiFiS3/src/WiFiSSLClient
+sed -i 's/const byte cert\[\]/const uint8_t cert[]/g; s/const byte\* _ecc_cert/const uint8_t* _ecc_cert/g' \
+  "$F.h" "$F.cpp"
+```
+
+> 📌 PlatformIO のフレームワーク再インストール時にパッチが消えるため、
+> CI や別マシンで使う場合は `scripts/patch-wifis3.sh` 等に切り出して
+> `platformio.ini` の `extra_scripts = pre:scripts/patch-wifis3.sh` で
+> 自動適用する運用が望ましい。
+> Arduino 公式 upstream の修正を待つのも一案。
+
+### `WebServer.h` が見つからない
+
+**症状**: `#include <WebServer.h>` で not found
+
+**原因**: Arduino UNO R4 Boards パッケージには `WebServer.h` が
+**含まれていない**。`arduino-libraries/WebServer` (ライブラリマネージャ) は
+AVR 系用で UNO R4 WiFi では動かない。
+
+**解決**: [[api/webserver-library|UNO R4 WiFi では WiFiServer + WiFiClient を直接使う]]
+(公式 `SimpleWebServerWiFi.ino` と同じアプローチ)。スケッチ実装は
+[[tutorials/wifi-api-server|MVP]] 参照。
+
 ## ビルド結果 (2026-08-10 時点)
 
-- RAM: 8.6% (2828 / 32768 bytes)
-- Flash: 13.1% (34464 / 262144 bytes)
+- 旧 Minima: RAM 8.6% (2828 / 32768 bytes), Flash 13.1% (34464 / 262144 bytes)
+- **WiFi (MVP スケッチ実測)**: RAM **16.0%** (5252 / 32768 bytes),
+  Flash **22.1%** (57812 / 262144 bytes) — byte パッチ + WiFiS3 + Stepper + WiFiServer 込み
+- 余裕: RAM 84%, Flash 78% — WebServer 風の高機能化や ArduinoJson 追加でもまだ余裕あり
 
 ## 関連ページ
 
-- [[arduino-uno-r4-minima]]
-- [[stepper-library]]
+- [[arduino-uno-r4-wifi]]
+- [[arduino-uno-r4-minima]] — 旧コントローラ (本プロジェクトでは不採用)
+- [[api/stepper-library]]
 - [[tutorials/stepper-library-examples]]
+- [[tutorials/wifi-api-server]] — WiFi + API server スケッチ
 - [[overview]]

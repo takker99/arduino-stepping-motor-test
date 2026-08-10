@@ -4,13 +4,16 @@ type: concept
 tags: [mcu, renesas, cortex-m4]
 sources:
   - raw/arduino-uno-r4-minima/ra4m1-datasheet.pdf
+  - raw/arduino-uno-r4-wifi/ra4m1-datasheet.pdf
+  - raw/arduino-uno-r4-wifi/ABX00087-full-pinout.pdf
 created: 2026-08-10
 updated: 2026-08-10
 ---
 
 # RA4M1 (R7FA4M1AB3CFM)
 
-[[arduino-uno-r4-minima]] に搭載されている **Renesas RA4M1 シリーズ** マイコン。
+[[arduino-uno-r4-minima|UNO R4 Minima]] および
+[[arduino-uno-r4-wifi|UNO R4 WiFi]] に搭載されている **Renesas RA4M1 シリーズ** マイコン。
 品番は **R7FA4M1AB3CFM#AA0** (LQFP64, 産業用温度範囲)。
 
 > このページはステッピングモーター制御に必要な範囲のみ抜粋する。
@@ -28,18 +31,25 @@ updated: 2026-08-10
 
 ## Arduino との対応
 
-[[arduino-uno-r4-minima]] のピン配置 (D0–D13, A0–A5) は RA4M1 の
-**Pxxx 端子** にマップされている。`ABX00080-full-pinout.pdf` p.4
-(advanced pinmap) で全対応が確認できる。
+UNO R4 系の Arduino ピン (D0–D13, A0–A5) は RA4M1 の **Pxxx 端子** にマップされる。
+**Minima と WiFi で一部 Arduino ピンの対応する RA4M1 端子が異なる** ため注意
+(同じ R7FA4M1AB3CFM チップだが、ボード設計者が Arduino ピンに割り当てる RA4M1
+端子を選んでいるため)。
 
-ステッピングモーター制御で使う D8〜D11 は次のとおり:
+ステッピングモーター制御で使う D8〜D11:
 
-| Arduino | RA4M1 |
-| --- | --- |
-| D8 | P304 |
-| D9 | P303 |
-| D10 | P112 |
-| D11 | P109 |
+| Arduino | Minima (ABX00080) | WiFi (ABX00087) |
+| --- | --- | --- |
+| D8 | P304 | P304 |
+| D9 | P303 | P303 |
+| D10 | P112 | **P103** |
+| D11 | P109 | **P411** |
+
+→ **本プロジェクト (WiFi) では D10 = P103, D11 = P411**。
+D8 / D9 は両 variant で共通。
+
+その他の Arduino ピンの対応は [[arduino-uno-r4-wifi#ピン配置 digital/analog headers]]
+(WiFi) / [[arduino-uno-r4-minima]] (Minima) を参照。
 
 ## 周辺機能 (このプロジェクトで関係する範囲)
 
@@ -58,5 +68,6 @@ GPIO 出力 HIGH は約 5 V が出るため、3.3 V デバイスを直接駆動�
 
 ## 関連ページ
 
-- [[arduino-uno-r4-minima]] — RA4M1 を搭載するボード
+- [[arduino-uno-r4-minima]] — RA4M1 搭載ボード (本プロジェクトでは不採用)
+- [[arduino-uno-r4-wifi]] — RA4M1 + ESP32-S3 搭載ボード (**本プロジェクトで使用**)
 - [[stepper-motor]]

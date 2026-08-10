@@ -3,9 +3,10 @@
 このドキュメントは LLM が wiki を保守・運営するときの **スキーマ（規約）** である。
 `llm-wiki.md` のパターン（三層: raw / wiki / schema）をこのプロジェクト向けに具体化する。
 
-> **目的（再掲）**: Arduino UNO R4 Minima でステッピングモーター（28BYJ-48 + ULN2003）を
-> 動かすスケッチを書くための知識を蓄積する。wiki は raw のラッパーであり、
+> **目的（再掲）**: Arduino UNO R4 WiFi + 28BYJ-48 + ULN2003 を、Wi-Fi HTTP API で
+> 制御するスケッチを書くための知識を蓄積する。wiki は raw のラッパーであり、
 > 「スケッチを書く」行為の判断材料を即座に引き出せる形に保つ。
+> (2026-08-10 方針変更: UNO R4 Minima → UNO R4 WiFi + MB102 + API サーバ化)
 
 ---
 
@@ -32,8 +33,12 @@ wiki/
 ├── log.md                # 時系列ログ（chronological, append-only）
 │
 ├── concepts/             # 概念・部品ページ（エンティティ単位）
-│   ├── arduino-uno-r4-minima.md
-│   ├── ra4m1.md
+│   ├── arduino-uno-r4-wifi.md       # 現行コントローラ
+│   ├── arduino-uno-r4-minima.md      # 旧コントローラ (superseded)
+│   ├── esp32-s3-mini-1.md            # Wi-Fi コプロセッサ
+│   ├── mb102.md                       # 電源モジュール
+│   ├── ams1117.md                     # LDO (MB102 内部)
+│   ├── ra4m1.md                       # メイン MCU (Minima/WiFi 共通)
 │   ├── stepper-motor.md
 │   ├── unipolar-vs-bipolar.md
 │   ├── 28byj-48.md
@@ -41,21 +46,31 @@ wiki/
 │   └── ...
 │
 ├── sources/              # 一次資料ごとのサマリ
-│   ├── arduino-uno-r4-minima-datasheet.md
-│   ├── ra4m1-datasheet.md
+│   ├── arduino-uno-r4-wifi-datasheet.md
+│   ├── arduino-uno-r4-minima-datasheet.md  # 旧 (参考)
+│   ├── esp32-s3-mini-1-datasheet.md
+│   ├── mb102-datasheet.md
+│   ├── mb102-ps-datasheet.md
+│   ├── ams1117-datasheet.md
 │   ├── 28byj-48-datasheet.md
 │   ├── uln2003a-datasheet.md
 │   └── ...
 │
-├── tutorials/            # Arduino 公式チュートリアルの要約
+├── tutorials/            # チュートリアル
+│   ├── wifi-api-server.md           # MVP (メイン)
+│   ├── wifi-api-design-notes.md     # 将来拡張の設計メモ
+│   ├── mb102-power-wiring.md        # 電源配線
 │   ├── unipolar-stepper-motor.md
-│   └── stepper-library-examples.md
+│   ├── stepper-library-examples.md
+│   └── platformio-setup.md
 │
 └── api/                  # Arduino 言語・ライブラリ API リファレンス
     ├── pinMode.md
     ├── digitalWrite.md
     ├── delay.md
-    └── stepper-library.md
+    ├── stepper-library.md
+    ├── wifis3-library.md             # WiFiS3 (Wi-Fi 接続)
+    └── webserver-library.md          # WebServer (HTTP サーバ)
 ```
 
 ### 使い分けの基準
@@ -202,11 +217,28 @@ pdftoppm -r 150 -f <N> -l <N> raw/<path>/foo.pdf /tmp/foo-page -png
 この wiki の最終目的は Arduino スケッチを書くこと。よって:
 
 - **配線情報** は `concepts/28byj-48.md` と `concepts/uln2003.md` に必ず
-  「Arduino UNO R4 → ULN2003 driver board → 28BYJ-48」の対応表として残す。
+  「Arduino UNO R4 WiFi → ULN2003 driver board → 28BYJ-48」の対応表として残す。
+  電源トポロジは [[arduino-uno-r4-wifi#電源トポロジ]] と [[tutorials/mb102-power-wiring]] を参照。
 - **使用上の注意**（電源、電流、GPIO電流容量、GND共通）は余白でも残す。
 - **スケッチの雛形**（コード片）は tutorials/ に置く。完成版スケッチは
   プロジェクトルートの `src/main.cpp` に置く（2026-08-10 決定）。
   ビルド手順は [[tutorials/platformio-setup]] を参照。
+- **API サーバ** 関連の設計判断 (REST 形状、認証、ノンブロッキング化等) は
+  [[tutorials/wifi-api-design-notes]] に集約。MVP は [[tutorials/wifi-api-server]]。
+
+## 「Wi-Fi API サーバ」目的のための追加ルール (2026-08-10 追加)
+
+本プロジェクトは Wi-Fi 経由でモーター制御する API サーバを構築する。
+スケッチ・配線に加えて以下の観点を維持する:
+
+- **シークレットの扱い**: SSID / パスワードは `src/secrets.h` に分離し `.gitignore` に追加。
+  完成版スケッチ (`src/main.cpp`) にはダミー値のみ書く。
+- **エンドポイント一覧の正本**: [[tutorials/wifi-api-server]] の表。
+  変更したら [[tutorials/wifi-api-design-notes]] も更新する。
+- **メモリ管理**: RA4M1 SRAM 32 KB を常に意識。`freeRam()` 相当のヘルパで
+  起動後に確認する運用を推奨 ([[api/wifis3-library#メモリ消費]])。
+- **ネットワーク越しのデバッグ**: USB シリアルが使えない構成 (本番運用) でも
+  `Serial1` (D0/D1) に UART-USB 変換アダプタを繋いでログ採取できる。
 
 ---
 
@@ -216,10 +248,14 @@ pdftoppm -r 150 -f <N> -l <N> raw/<path>/foo.pdf /tmp/foo-page -png
 
 | 用語 | wikiでの表記 |
 | --- | --- |
-| Arduino UNO R4 Minima | "UNO R4 Minima" または "R4 Minima"（文脈で判断） |
+| Arduino UNO R4 WiFi | "UNO R4 WiFi" または "R4 WiFi"（文脈で判断） |
+| Arduino UNO R4 Minima | "UNO R4 Minima" または "R4 Minima"（旧方針、参考用） |
 | 28BYJ-48 | "28BYJ-48"（ハイフン含めて固有名詞） |
 | ULN2003AN / ULN2003A | "ULN2003"（チップそのもの）または "ULN2003AN"（TI品番） |
 | RA4M1 (R7FA4M1AB3CFM) | "RA4M1"（シリーズ名）または "R7FA4M1AB3CFM"（品番） |
+| ESP32-S3-MINI-1-N8 | "ESP32-S3" または "ESP32-S3-MINI-1"（文脈で判断） |
+| MB102 | "MB102"（固有名詞） |
+| AMS1117 | "AMS1117"（MB102 搭載 LDO の一般名）/ "AM1117-5/AM1117-3.3"（MB102 基板シルク） |
 | ユニポーラ | "unipolar" または "ユニポーラ"（ページごとに初出時に統一） |
 
 ---

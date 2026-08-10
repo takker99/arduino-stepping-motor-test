@@ -73,14 +73,6 @@ raw/*
 # PlatformIO
 .pio/
 .vscode/
-.pio/libdeps/uno_r4_minima/integrity.dat
-.pio/libdeps/uno_r4_minima/Stepper/.piopm
-.pio/libdeps/uno_r4_minima/Stepper/keywords.txt
-.pio/libdeps/uno_r4_minima/Stepper/library.properties
-.pio/libdeps/uno_r4_minima/Stepper/README.adoc
-.pio/libdeps/uno_r4_minima/Stepper/examples/MotorKnob/MotorKnob.ino
-.pio/libdeps/uno_r4_minima/Stepper/examples/stepper_oneRevolution/stepper_oneRevolution.ino
-.pio/libdeps/uno_r4_minima/Stepper/examples/stepper_oneStepAtATime/stepper_oneStepAtATime.ino
-.pio/libdeps/uno_r4_minima/Stepper/examples/stepper_speedControl/stepper_speedControl.ino
-.pio/libdeps/uno_r4_minima/Stepper/src/Stepper.cpp
-.pio/libdeps/uno_r4_minima/Stepper/src/Stepper.h
+
+# Wi-Fi 認証情報 (SSID/パスワード)
+src/secrets.h

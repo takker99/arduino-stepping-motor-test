@@ -1,7 +1,7 @@
 ---
 title: Arduino UNO R4 Minima
 type: concept
-tags: [arduino, mcu, board, renesas]
+tags: [arduino, mcu, board, renesas, superseded]
 sources:
   - raw/arduino-uno-r4-minima/ABX00080-datasheet.pdf
   - raw/arduino-uno-r4-minima/datasheet.md
@@ -14,8 +14,11 @@ updated: 2026-08-10
 
 # Arduino UNO R4 Minima
 
-SKU: **ABX00080**。32bit 化した UNO シリーズ。本プロジェクトで [[28byj-48]] +
-[[uln2003]] を駆動する **コントローラ**。
+SKU: **ABX00080**。32bit 化した UNO シリーズ。
+
+> ⚠️ **2026-08-10 方針変更**: 本プロジェクトでは [[arduino-uno-r4-wifi|UNO R4 WiFi]] に
+> 移行しました。本ページは旧方針の記録として残してあります。
+> 新規スケッチ・配線は [[arduino-uno-r4-wifi]] 側のページを参照してください。
 
 ![Top view](raw/arduino-uno-r4-minima/ABX00080-full-pinout.pdf) (※ raw を直接参照)
 
@@ -118,7 +121,8 @@ A4/A5 を I2C として使う場合は **外付けでプルアップ抵抗を追
 
 ## 関連ページ
 
-- [[ra4m1]] — 搭載 MCU の詳細
+- [[arduino-uno-r4-wifi]] — **本プロジェクトで採用する後継ボード** (WiFi + API server 化)
+- [[ra4m1]] — 搭載 MCU の詳細 (Minima / WiFi で共通)
 - [[stepper-motor]] — 駆動対象モーターの概念
 - [[28byj-48]] — 本プロジェクトで使うモーター
 - [[uln2003]] — 駆動用ドライバ IC
