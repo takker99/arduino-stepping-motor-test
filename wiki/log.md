@@ -64,3 +64,21 @@ raw/ 配下の全資料を一括 ingest して wiki 基盤を構築。
   ユーザーと相談
 - [[28byj-48]] の `stepsPerRevolution` の正確な値 (256 vs 4096) —
   実機検証が必要
+
+## [2026-08-10] update | PlatformIO 環境構築
+
+スケッチ開発環境として PlatformIO を導入。ビルド成功まで確認済み。
+
+- `platformio.ini` 作成 (env: uno_r4_minima, renesas-ra @ 1.9.0, Arduino framework)
+- `src/main.cpp` 作成 — [[tutorials/stepper-library-examples]] の
+  `stepper_oneRevolution` ベース + 28BYJ-48 用設定 (4096 step/rev, D8–D11)
+- Stepper ライブラリを `lib_deps = arduino-libraries/Stepper` で追加
+  (framework に同梱されないため)
+- **aarch64 の罠**: renesas-ra の要求ツールチェーン ~1.70201.0 は
+  linux_aarch64 ビルドが存在しない → `platform_packages` で
+  ~1.120301.0 (GCC 12.3.1) に上書きして解決
+  (詳細: [[tutorials/platformio-setup]])
+- ビルド成功: RAM 8.6% / Flash 13.1%
+- `.gitignore` に `.pio/`, `.vscode/` を追加
+- **未解決事項の決着**: 完成版スケッチの配置先 → プロジェクトルート `src/` に決定
+  ([[tutorials/platformio-setup]] 参照)

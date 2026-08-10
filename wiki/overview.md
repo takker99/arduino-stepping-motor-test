@@ -5,12 +5,13 @@
 
 ## プロジェクトの状態 (2026-08-10)
 
-**フェーズ**: ナレッジ蓄積 (raw → wiki への ingest 完了)。
+**フェーズ**: 開発環境構築完了 (PlatformIO)。
 
-次のフェーズは、ingest したナレッジを元に **実際にスケッチを書いてマイコンに
-書き込む** 段階になる。書き込みスケッチは wiki 内の情報を組み合わせて
-組み立てる想定 (例: `[[tutorials/stepper-library-examples]]` の
-`stepper_oneRevolution` をベースにする)。
+- PlatformIO 環境セットアップ完了 → [[tutorials/platformio-setup]]
+- スケッチ雛形 `src/main.cpp` 作成・ビルド成功 (RAM 8.6% / Flash 13.1%)
+- スケッチの配置先はプロジェクトルート `src/` に決定
+
+次のアクションは **実機への書き込み** (`pio run -t upload`) と動作確認。
 
 ## 主要トピック
 
@@ -30,6 +31,7 @@
 
 - [[tutorials/stepper-library-examples]] — Stepper ライブラリのサンプル集
 - [[tutorials/unipolar-stepper-motor]] — ライブラリを使わない最小例
+- [[tutorials/platformio-setup]] — PlatformIO 環境構築・ビルド手順
 - [[api/stepper-library]] — `Stepper.h` API リファレンス
 - [[api/pinMode]] / [[api/digitalWrite]] / [[api/delay]]
 
@@ -107,8 +109,8 @@ void loop() {
 
 ## 次のアクション
 
-1. スケッチを完成させ、`src/` ディレクトリに配置 (要: ユーザーと相談)
-2. マイコンへの書き込み手順を wiki に追記
+1. 実機を USB 接続して `pio run -t upload` で書き込み (要: 実機)
+2. `pio device monitor` でシリアル確認、回転方向・ステップ数 (256 vs 4096) を検証
 3. 実機テスト結果・観察を wiki にフィードバック
 4. 必要に応じて電源回路 (5V 別電源) の検討
 

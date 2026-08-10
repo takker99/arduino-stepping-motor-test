@@ -204,9 +204,9 @@ pdftoppm -r 150 -f <N> -l <N> raw/<path>/foo.pdf /tmp/foo-page -png
 - **配線情報** は `concepts/28byj-48.md` と `concepts/uln2003.md` に必ず
   「Arduino UNO R4 → ULN2003 driver board → 28BYJ-48」の対応表として残す。
 - **使用上の注意**（電源、電流、GPIO電流容量、GND共通）は余白でも残す。
-- **スケッチの雛形**（コード片）は tutorials/ に置く。完成版スケッチを
- ここに保存するかどうかは別途相談する（プロジェクトルートに `src/` を
- 設けるか wiki に閉じるかは未決定 — ユーザーと相談）。
+- **スケッチの雛形**（コード片）は tutorials/ に置く。完成版スケッチは
+  プロジェクトルートの `src/main.cpp` に置く（2026-08-10 決定）。
+  ビルド手順は [[tutorials/platformio-setup]] を参照。
 
 ---
 

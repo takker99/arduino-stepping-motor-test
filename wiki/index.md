@@ -30,6 +30,7 @@ wiki の全ページを **カテゴリ別** に整理したカタログ。
 | --- | --- | --- |
 | [[tutorials/stepper-library-examples]] | 公式 "Stepper Motors with Arduino" 4 サンプル | stepper-library-examples.md |
 | [[tutorials/unipolar-stepper-motor]] | 公式 "Unipolar Stepper Motor" ライブラリ不使用例 | unipolar-stepper-motor-tutorial.md |
+| [[tutorials/platformio-setup]] | PlatformIO 環境構築・ビルド手順 (aarch64 の罠含む) | — (実績メモ) |
 
 ## API (Arduino API リファレンス)
 
