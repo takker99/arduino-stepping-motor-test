@@ -24,6 +24,7 @@ wiki の全ページを **カテゴリ別** に整理したカタログ。
 | [[unipolar-vs-bipolar]] | unipolar vs bipolar の構造・駆動比較 | stepper, theory |
 | [[28byj-48]] | 5V, 4 相, 1/64 減速, 4096 step/rev unipolar モーター | stepper, unipolar |
 | [[uln2003]] | 7ch NPN ダーリントンアレイ (500 mA/ch) | driver, darlington |
+| [[triaxial-test]] | 最終用途: 三軸試験機 (ひずみゲージ + 80 Hz 計測, ノイズ分析) | test-equipment, strain-gauge, measurement |
 
 ## Sources (一次資料のサマリ)
 
@@ -94,6 +95,10 @@ wiki の全ページを **カテゴリ別** に整理したカタログ。
 ### driver
 
 - [[uln2003]]
+
+### test-equipment / measurement
+
+- [[triaxial-test]]
 
 ### datasheet
 

@@ -6,6 +6,28 @@ wiki の **append-only** な活動履歴。
 
 最終更新: 2026-08-10
 
+## [2026-08-10] note | 通信方式・最終用途の設計議論
+
+ユーザーとの設計議論。Modbus TCP / 試験機用途の通信方式 / 最終用途の計測要件を整理。
+
+- **Modbus TCP vs JSON HTTP**: 技術的には可能 (自前実装前提。公式 ArduinoModbus は
+  renesas 未対応 — open issue #119)。この用途ならどちらでも成立、決定要因は
+  「クライアントが産業ソフトかどうか」→ [[tutorials/wifi-api-design-notes]]
+- **WiFi vs USB-serial vs Bluetooth**: 単機・PC 隣接なら USB が最善 (遅延 ~1 ms で決定的)。
+  **今回の結論** = 試作用に WiFi HTTP を継続、最終形態は PC 制御 + USB-serial が有力
+- **最終用途の確定**: 三軸試験機 (ひずみゲージ + 80 Hz サンプリング, PC 制御メイン)。
+  2.4 GHz RF は測定に実質無関係、実ノイズ源はエイリアシング / GND ループ / 伝導ノイズ
+  → [[triaxial-test]] (新規作成)
+- **用語集の方針**: 一般用語 (MCU, OTA, インピーダンス等) の個別ページは作成しない
+  (LLM のモデル知識に含まれるため情報量ゼロ)。用語定義は [[triaxial-test]] に
+  inline で収録
+
+### 作成・更新
+
+- [[tutorials/wifi-api-design-notes]] — Modbus 比較 + 通信方式選択を追記
+- [[triaxial-test]] — 新規作成 (concepts/)
+- [[index]] — 新ページ登録
+
 ## [2026-08-10] update | 方針変更: UNO R4 WiFi + MB102 + API server 化
 
 ユーザー指示により本プロジェクトの方針を全面改訂。
