@@ -6,7 +6,7 @@ sources:
   - raw/arduino-uno-r4-wifi/datasheet.md
   - raw/arduino-uno-r4-wifi/user-manual.md
 created: 2026-08-10
-updated: 2026-08-10
+updated: 2026-08-12
 ---
 
 # Wi-Fi API Server 実装 (MVP)
@@ -61,8 +61,9 @@ POST /step?steps=2048&dir=cw HTTP/1.1
 
 ## 配線
 
-[[arduino-uno-r4-wifi#ピン配置 digital/analog headers|D8–D11 → ULN2003 IN1–IN4]]
-は従来通り。電源トポロジは [[arduino-uno-r4-wifi#電源トポロジ]] 参照 (Arduino は USB 給電、
+[[arduino-uno-r4-wifi#ピン配置 digital/analog headers|D7–D4 → ULN2003 IN1–IN4]]
+(実機配線, 2026-08-12 確定。コードは src/main.cpp 参照)。電源トポロジは
+[[arduino-uno-r4-wifi#電源トポロジ]] 参照 (Arduino は USB 給電、
 モーターは MB102 から)。
 
 ## スケッチ (MVP)

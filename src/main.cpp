@@ -4,10 +4,10 @@
 #include "secrets.h"
 
 const int STEPS_PER_REV = 4096;
-const int PIN_IN1 = 8;
-const int PIN_IN2 = 9;
-const int PIN_IN3 = 10;
-const int PIN_IN4 = 11;
+const int PIN_IN1 = 7;
+const int PIN_IN2 = 6;
+const int PIN_IN3 = 5;
+const int PIN_IN4 = 4;
 Stepper myStepper(STEPS_PER_REV, PIN_IN1, PIN_IN2, PIN_IN3, PIN_IN4);
 
 enum MotorState { IDLE, RUNNING, ERROR };
@@ -195,14 +195,21 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println();
-    Serial.print("Connected. IP: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println();
-    Serial.println("Wi-Fi connect failed. Server will still start.");
+  Serial.println();
+  Serial.print("status: ");
+  Serial.println(WiFi.status());
+  unsigned long ipWait = millis();
+  while (WiFi.localIP() == IPAddress(0, 0, 0, 0) && millis() - ipWait < 10000) {
+    delay(500);
   }
+  Serial.print("localIP: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("gateway: ");
+  Serial.println(WiFi.gatewayIP());
+  Serial.print("subnet: ");
+  Serial.println(WiFi.subnetMask());
+  Serial.print("RSSI: ");
+  Serial.println(WiFi.RSSI());
 
   server.begin();
   Serial.println("HTTP server started on port 80.");

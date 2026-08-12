@@ -6,7 +6,7 @@ sources:
   - raw/mb102/MB102_Netzteil_Adapter_Schematic_AZ-Delivery.pdf
   - raw/mb102/ams1117-ds1117.pdf
 created: 2026-08-10
-updated: 2026-08-10
+updated: 2026-08-12
 ---
 
 # MB102 電源配線
@@ -59,7 +59,7 @@ MB102 の両側レール (上段・下段) は独立にジャンパ設定。
                               │         │          │ │IN1..IN4  │ │          │
                               │         └──────────┘ └────┬─────┘ └──────────┘
                               │                           │
-                              │                  D8─IN1, D9─IN2, D10─IN3, D11─IN4
+                              │                  D7─IN1, D6─IN2, D5─IN3, D4─IN4
                               │                           │
                               │                  (Arduino UNO R4 WiFi から)
                               │                           │
@@ -86,7 +86,7 @@ MB102 の両側レール (上段・下段) は独立にジャンパ設定。
    - 28BYJ-48 Blue コイル線 → ブレッドボードの GND
    - ULN2003 GND → ブレッドボードの GND
    - Arduino GND → ブレッドボードの GND (**GND 共通化が必須**)
-5. **ULN2003 IN1〜IN4 を Arduino D8〜D11 に接続**
+5. **ULN2003 IN1〜IN4 を Arduino D7〜D4 に接続** (実機配線, 2026-08-12 確定)
 6. **Arduino を USB-C で PC に接続**
    - 開発中は PC USB から給電
    - 本番運用時は別 USB 充電器から給電

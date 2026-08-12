@@ -46,6 +46,7 @@ wiki の全ページを **カテゴリ別** に整理したカタログ。
 | [[tutorials/wifi-api-server]] | **Wi-Fi HTTP API サーバ MVP 実装** (STA, POST /step + GET /status) | — (独自実装) |
 | [[tutorials/wifi-api-design-notes]] | API サーバの将来設計 (AP フォールバック, 認証, ノンブロッキング化等) | — (設計メモ) |
 | [[tutorials/mb102-power-wiring]] | MB102 + 9V 1.3A + Arduino USB 給電 の電源トポロジ | — (独自実装) |
+| [[tutorials/wifi-firmware-update]] | ESP32-S3 Wi-Fi ファームウェア更新 (0.4.1 → 0.6.0, IP 0.0.0.0 対策) | github.com/arduino/uno-r4-wifi-usb-bridge |
 | [[tutorials/stepper-library-examples]] | 公式 "Stepper Motors with Arduino" 4 サンプル | stepper-library-examples.md |
 | [[tutorials/unipolar-stepper-motor]] | 公式 "Unipolar Stepper Motor" ライブラリ不使用例 | unipolar-stepper-motor-tutorial.md |
 | [[tutorials/platformio-setup]] | PlatformIO 環境構築・ビルド手順 (aarch64 の罠含む) | — (実績メモ) |

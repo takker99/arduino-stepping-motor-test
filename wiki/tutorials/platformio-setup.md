@@ -3,7 +3,7 @@ title: PlatformIO 開発環境セットアップ
 type: tutorial
 tags: [tutorial, platformio, build, toolchain, setup]
 created: 2026-08-10
-updated: 2026-08-10
+updated: 2026-08-12
 ---
 
 # PlatformIO 開発環境セットアップ
@@ -80,6 +80,68 @@ platform_packages =
 | --- | --- | --- |
 | ~1.70201.0 | なし | renesas-ra のデフォルト要求 |
 | ~1.120301.0 | あり | 本プロジェクトで使用 (GCC 12.3.1) |
+
+### WSL2 で USB デバイスが見えない (UNO R4 WiFi)
+
+**症状**: `pio device list` にデバイスが現れない。`ls /dev/ttyACM*` も空。
+(Windows 側では COM ポートとして認識されている)
+
+**原因**: WSL2 はデフォルトで USB をゲストに通さない。Windows 側の
+**usbipd-win** で明示的に attach する必要がある (WSL1 は非対応、WSL2 専用)。
+
+**解決**:
+
+1. 管理者 PowerShell で usbipd をインストール (一度だけ):
+
+   ```powershell
+   winget install usbipd
+   ```
+
+2. デバイスを確認 (管理者 PowerShell):
+
+   ```powershell
+   usbipd list
+   # BUSID  VID:PID    DEVICE                            STATE
+   # 2-1    2341:1002  USB シリアル デバイス (COM5)      Detached / Shared
+   ```
+
+   VID 2341 = Arduino。実機では UNO R4 WiFi が `2341:1002 (COM5)` だった。
+
+3. bind (一度だけ。以後 persisted):
+
+   ```powershell
+   usbipd bind -b 2-1
+   ```
+
+4. WSL に attach (セッションごと。常時化は末尾に `--auto-attach`):
+
+   ```powershell
+   usbipd attach --wsl -b 2-1                  # 手動
+   usbipd attach --wsl -b 2-1 --auto-attach    # 以後自動
+   ```
+
+5. WSL 側で確認:
+
+   ```bash
+   ls -la /dev/ttyACM*    # UNO R4 WiFi は ttyACM0 (CDC) になる
+   pio device list
+   ```
+
+**確認結果 (2026-08-12 実機)**:
+
+```
+/dev/ttyACM0
+------------
+Hardware ID: USB VID:PID=2341:1002 SER=64E83361C5C0 LOCATION=1-1:1.1
+Description: UNO WiFi R4 CMSIS-DAP - TinyUSB CDC
+```
+
+UNO R4 WiFi は CMSIS-DAP デバッガ + シリアル (CDC) を兼ねた 1 ポートで、
+`pio run -t upload` も `pio device monitor` もこの 1 ポートで動く。
+
+**パーミッション**: WSL2 では `/dev/ttyACM0` が `crw-rw-rw-` (666, root:dialout)
+で作成され、追加設定なしでアクセス可能だった。Permission denied が出る場合は
+`sudo usermod -aG dialout $USER` → 再ログイン、または `sudo chmod 666 /dev/ttyACM0`。
 
 ### Stepper.h が見つからない
 

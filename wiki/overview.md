@@ -2,7 +2,7 @@
 title: Overview — arduino-stepping-motor-test
 type: overview
 created: 2026-08-10
-updated: 2026-08-10
+updated: 2026-08-12
 ---
 
 # Overview — arduino-stepping-motor-test
@@ -81,10 +81,10 @@ updated: 2026-08-10
                   ┌─────────────────────────────┐
                   │  Arduino UNO R4 WiFi         │
                   │                              │
-                  │  D8  ──────► IN1 ┐           │
-                  │  D9  ──────► IN2 ├──┐        │
-                  │  D10 ──────► IN3 ├──┤        │
-                  │  D11 ──────► IN4 ├──┤        │
+│  D7  ──────► IN1 ┐           │
+│  D6  ──────► IN2 ├──┐        │
+│  D5  ──────► IN3 ├──┤        │
+│  D4  ──────► IN4 ├──┤        │
                   │                  │  │        │
                   │  GND ────────────┼──┼─┐      │
                   └─────────────────┼──┼─┼──────┘
@@ -117,6 +117,9 @@ updated: 2026-08-10
    Arduino UNO R4 WiFi は USB-C 経由で
    PC (開発時) / 別 USB 充電器 (本番) から給電
 ```
+
+> ⚠️ **実機配線 (2026-08-12 確定)**: IN1–IN4 → **D7–D6–D5–D4**。
+> 旧記述 (D8–D11) から訂正。コード `src/main.cpp` も 7, 6, 5, 4 に変更済み。
 
 ## 電源トポロジ (2026-08-10 決定)
 

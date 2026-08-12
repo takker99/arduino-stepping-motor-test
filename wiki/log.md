@@ -131,6 +131,10 @@ Minima と WiFi で異なるため、ボードレジスタを直接叩く場合�
 - 5V (Arduino 5V or 外部 5V) → Red (COM) ＋ ULN2003 COM
 - GND 共通
 
+> ⚠️ **訂正 (2026-08-12)**: 実機配線は **IN1=D7, IN2=D6, IN3=D5, IN4=D4** で確定。
+> 旧記述の D8–D11 は不採用。コード `src/main.cpp` も 7, 6, 5, 4 に変更済み。
+> 詳細は [[log#2026-08-12 中座]] のエントリ参照。
+
 ## [2026-08-10] note | 未解決事項 (旧方針)
 
 - モーター用 5V 電源の選択 (Arduino 5V から取るか、外部電源を使うか) —
@@ -176,6 +180,39 @@ raw/ 配下の全資料を一括 ingest して wiki 基盤を構築。
   - ABX00080-schematics p.1 (回路図本体)
   - ULN2003A p.3 (ピン配置), p.14 (等価回路), p.17 (駆動設計), p.19 (System Examples)
 
+## [2026-08-12] update | ESP32-S3 Wi-Fi ファームウェア更新手順の新規ページ化
+
+実機で `Connected. IP: 0.0.0.0` (ファームウェア 0.4.1 の localIP() バグ) が発覚。
+[[tutorials/wifi-firmware-update]] を新規作成 (0.4.1 → 0.6.0, updater スクリプト手順)。
+
+- 症状: `WiFi.status() == WL_CONNECTED` なのに `localIP() == 0.0.0.0`
+- 原因: ESP32-S3 USB bridge ファームウェア 0.4.1 の既知バグ
+- 対処: 公式 `unor4wifi-update-windows.zip` (unor4wifi-reboot + espflash) で 0.6.0 へ更新
+- WSL 固有の注意: 更新前に `usbipd detach`、更新後に再アタッチが必要
+
+### 作成・更新
+
+- [[tutorials/wifi-firmware-update]] — 新規作成 (tutorials/)
+- [[index]] — Tutorials 表に登録
+
+## [2026-08-12] update | WSL2 USB パススルー対応 + 実機接続確認
+
+[[tutorials/platformio-setup]] に WSL2 での USB デバイス接続手順 (usbipd-win) を追記。
+
+- Windows 側: `usbipd bind` → `usbipd attach --wsl` (`--auto-attach` で常時化)
+- WSL 側: `/dev/ttyACM0` 確認 → `pio device list` で `UNO WiFi R4 CMSIS-DAP - TinyUSB CDC`
+  (VID:PID 2341:1002, SER 64E83361C5C0) を確認
+- パーミッション: `crw-rw-rw-` (666) で追加設定不要だった (Permission denied 時の対処も追記)
+
+### 作成・更新
+
+- [[tutorials/platformio-setup]] — WSL2 troubleshoot セクション追記 (updated: 2026-08-12)
+- [[log]] — 本エントリ追記
+
+### 次のアクション
+
+`pio run -t upload` で実機へ書き込み → 動作確認 → 結果を本 [[log]] へ。
+
 ## [2026-08-12] note | 配線完了 (実機)
 
 [[arduino-uno-r4-wifi|UNO R4 WiFi]] + [[28byj-48]] + [[uln2003|ULN2003]] +
@@ -200,3 +237,41 @@ raw/ 配下の全資料を一括 ingest して wiki 基盤を構築。
 ### 作成・更新
 
 - [[log]] — 本エントリ追記
+
+## [2026-08-12] note | 中座 — 実機デバッグ途中 (Wi-Fi OK / モーター通電なし)
+
+Wi-Fi HTTP API サーバは実機疎通まで完了。モーター駆動は通電確認中で一時中座。
+**次回は「残課題」から再開する。**
+
+### 進捗
+
+- **ファームウェア**: ESP32-S3 を 0.4.1 → **0.6.0** に更新完了
+  (espflash の途中停止をリトライで回避。手順: [[tutorials/wifi-firmware-update]])
+- **IP 0.0.0.0 問題を解決**: DHCP 割当が `WiFi.status() == WL_CONNECTED` より遅れる
+  タイミング問題だった。`src/main.cpp` に localIP が有効になるまで最大 10 秒待つ
+  処理 + デバッグ出力 (status/localIP/gateway/subnet/RSSI) を追加
+  → **192.168.11.3** で接続確認 (status=3, RSSI ≈ -67 dBm)
+- **curl 疎通 OK**: `GET /` / `GET /status` / `POST /step` すべて 200 応答
+- **実配線が D7–D4 と判明** → `src/main.cpp` のピン定数を 7,6,5,4 に変更、
+  wiki 全体の配線対応表を訂正 ([[overview]], [[28byj-48]], [[uln2003]],
+  [[tutorials/mb102-power-wiring]], [[tutorials/wifi-api-server]], 旧ログエントリ)
+
+### 残課題: モーターが動かない (次回の開始点)
+
+- 症状: ステップ実行中 4 LED が高速点滅 (全点灯に見える) + 高周波唸り音 (1 kHz)
+  = シーケンスとドライバ入力は正常
+- **シャフトの抵抗が電源 ON/OFF で同程度 → 保持トルクゼロ = コイルに無通電**
+  (ギアボックスは正常: 手回しのギア音・抵抗は 28BYJ-48 として普通)
+- 未検証のチェック項目 (優先順):
+  1. ULN2003 基板 **+V と GND 間の電圧** (~5V 必須)
+  2. 28BYJ-48 **赤線 (COM/中心タップ) → 5V** の接続 (基板 +V 経由 or 直接)
+  3. 赤 ↔ 青/ピンク/黄/オレンジ のコイル抵抗 (~50Ω)
+  4. モーター 5 ピンコネクタの接触 (挿し直し)
+- 最有力仮説: **赤線 (中心タップ) への 5V 供給が切れている**
+- 通電確認でき次第: `POST /step?steps=2048&dir=cw` で回転確認 → 本 [[log]] に記録
+
+### 変更ファイル
+
+- `src/main.cpp` — ピン D7–D4 化 + IP 待ちデバッグ出力
+- [[overview]], [[28byj-48]], [[uln2003]], [[tutorials/mb102-power-wiring]],
+  [[tutorials/wifi-api-server]], [[log]] — 配線対応表を実機 (D7–D4) に訂正
