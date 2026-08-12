@@ -4,7 +4,7 @@ wiki の **append-only** な活動履歴。
 各エントリは `## [YYYY-MM-DD] <種別> | <タイトル>` で始める (grep で抽出可能)。
 種別: `ingest` / `query` / `lint` / `update` / `note` 等。
 
-最終更新: 2026-08-10
+最終更新: 2026-08-12
 
 ## [2026-08-10] note | 通信方式・最終用途の設計議論
 
@@ -175,3 +175,28 @@ raw/ 配下の全資料を一括 ingest して wiki 基盤を構築。
   - ABX00080-full-pinout p.1–4 (フルピンアウト 4 ページ)
   - ABX00080-schematics p.1 (回路図本体)
   - ULN2003A p.3 (ピン配置), p.14 (等価回路), p.17 (駆動設計), p.19 (System Examples)
+
+## [2026-08-12] note | 配線完了 (実機)
+
+[[arduino-uno-r4-wifi|UNO R4 WiFi]] + [[28byj-48]] + [[uln2003|ULN2003]] +
+電源モジュール (ELEGOO 互換品) の配線を実機で完了。
+写真: https://gyazo.com/27fb73f6bdb5df4617a67237fffbccc0
+
+- 信号線: D8–D11 → ULN2003 IN1–IN4
+- 電源: 9V アダプタ → ELEGOO 電源モジュール → ブレッドボード 5V/GND
+- GND 共通化済: Arduino (USB 給電) / 電源モジュール / ULN2003 / 28BYJ-48
+
+### 次のアクション
+
+[[overview#次のアクション]] 参照。
+
+1. `src/secrets.h` (未作成) を新設し SSID / PASS を分離 → `.gitignore` へ追加
+2. USB-C で Arduino を PC に接続し `pio run -t upload`
+3. `pio device monitor` で IP を確認
+4. `curl http://<IP>/status` で疎通確認
+5. `POST /step?steps=2048&dir=cw` でモーター回転確認
+6. 結果を本 [[log]] にフィードバック
+
+### 作成・更新
+
+- [[log]] — 本エントリ追記
