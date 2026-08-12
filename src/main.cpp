@@ -1,9 +1,7 @@
 #include <Arduino.h>
 #include <Stepper.h>
 #include <WiFiS3.h>
-
-const char* WIFI_SSID = "YOUR_SSID";
-const char* WIFI_PASS = "YOUR_PASS";
+#include "secrets.h"
 
 const int STEPS_PER_REV = 4096;
 const int PIN_IN1 = 8;
