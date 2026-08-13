@@ -78,9 +78,9 @@ void loop() {
 - 2 ms → 500 step/s = 125 cycle/s
 - 10 ms → 100 step/s = 25 cycle/s
 
-[[28byj-48]] の場合は 4096 step/rev なので、
-- 2 ms/step → 8.2 s/rev (≈ 7.3 RPM)
-- 10 ms/step → 41 s/rev (≈ 1.5 RPM)
+[[28byj-48]] の場合は 2048 step/rev なので、
+- 2 ms/step → 4.1 s/rev (≈ 14.6 RPM)
+- 10 ms/step → 20.5 s/rev (≈ 2.9 RPM)
 
 [[stepper-library]] を使うと `setSpeed(rpm)` で RPM 単位で指定でき、
 内部で `micros()` ベースのタイミング管理をする (ブロッキング delay ではない)。

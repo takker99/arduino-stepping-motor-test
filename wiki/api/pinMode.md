@@ -58,13 +58,14 @@ void loop() {
 
 ## ステッピングモーター制御での典型
 
-[[28byj-48]] + [[uln2003]] driver board を Arduino UNO R4 の D8–D11 に繋ぐ場合:
+[[28byj-48]] + [[uln2003]] driver board を Arduino UNO R4 の D7–D4 に繋ぐ場合
+(実機配線: IN1=D7, IN2=D5, IN3=D6, IN4=D4, 2026-08-12 確定):
 
 ```cpp
-const int motorPin1 = 8;
-const int motorPin2 = 9;
-const int motorPin3 = 10;
-const int motorPin4 = 11;
+const int motorPin1 = 7;
+const int motorPin2 = 5;
+const int motorPin3 = 6;
+const int motorPin4 = 4;
 
 void setup() {
   pinMode(motorPin1, OUTPUT);

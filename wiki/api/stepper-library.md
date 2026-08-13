@@ -200,13 +200,13 @@ void Stepper::step(int steps_to_move) {
 ```cpp
 #include <Stepper.h>
 
-const int stepsPerRevolution = 4096;  // 28BYJ-48 の減速後 1 回転
+const int stepsPerRevolution = 2048;  // 28BYJ-48 の 1 回転 (4 相 2 相励磁)
 
-// initialize the Stepper library on pins 8 through 11:
-Stepper myStepper(stepsPerRevolution, 8, 9, 10, 11);
+// 28BYJ-48 は第 2・3 引数 (in2, in3) を入れ替える (相順問題, [[#相順 (phase order) の罠]])
+Stepper myStepper(stepsPerRevolution, 8, 10, 9, 11);
 
 void setup() {
-  myStepper.setSpeed(15);     // RPM (5 rpm 程度が安定)
+  myStepper.setSpeed(15);     // RPM (1–15 が実機確認済みの安定レンジ, 2026-08-13)
   Serial.begin(9600);
 }
 
@@ -231,7 +231,7 @@ A0 の可変抵抗でモーターを追従制御:
 
 ```cpp
 #include <Stepper.h>
-#define STEPS 100  // ← 28BYJ-48 なら 4096
+#define STEPS 100  // ← 28BYJ-48 なら 2048
 
 Stepper stepper(STEPS, 8, 9, 10, 11);
 int previous = 0;
@@ -253,7 +253,7 @@ void loop() {
 
 ```cpp
 #include <Stepper.h>
-const int stepsPerRevolution = 200;  // ← 28BYJ-48 なら 4096
+const int stepsPerRevolution = 200;  // ← 28BYJ-48 なら 2048
 Stepper myStepper(stepsPerRevolution, 8, 9, 10, 11);
 int stepCount = 0;
 

@@ -561,3 +561,26 @@ API の全体像 (エンドポイント・パラメータ・レスポンス) を
 - 20 rpm 以上を回すには加速度ランプが必要 ([[tutorials/wifi-api-design-notes]]
   の将来課題)。実用上は **1–15 rpm が使用レンジ**
 - ギアボックス損傷の疑いは無し (全速度で回転・音とも正常)
+
+## [2026-08-13] docs | wiki 全体の整合性整理 (2048 step/rev / D7–D4 に統一)
+
+実機検証の結果確定した値 (STEPS_PER_REV=2048, D7–D4, 相順入れ替え) を
+wiki 全体に反映し、残存していた旧記述を整理した。
+
+- **[[tutorials/wifi-api-server]]**: 埋め込みの完成版スケッチ (旧 D8–D11 /
+  4096 / `openApiDoc()` 未定義参照など src/main.cpp とドリフト) を削除し、
+  骨格 + `src/main.cpp` へのポインタに置換。`GET /` は OpenAPI JSON なので
+  HTML ヘルプは `/index.html` と明記
+- **[[api/stepper-library]]**: `stepper_oneRevolution` サンプルを 2048 +
+  第 2・3 引数入れ替えに修正 (旧 4096 のままでは動作しない記述だった)。
+  MotorKnob / oneStepAtATime のコメントも 2048 に
+- **[[api/pinMode]]**: 例のピンを D8–D11 → D7–D4 (実機配線)
+- **[[arduino-uno-r4-wifi]]**: 接続ピンの記述を D7–D4 に更新
+- **[[overview]]**: モーター仕様の 4096 → 2048 step/rev
+- **[[api/delay]]**: 2048 step/rev での s/rev・rpm 換算値に更新
+- **[[wifi-api-design-notes]]**: degrees 換算式を /4096 → /2048 に修正
+- **[[stepper-library-examples]]**: 改造ポイントのピンを D7–D4 に更新
+- **[[sources/28byj-48-datasheet]]**: データシートの 4096 step は half-step
+  換算である旨を明記 (ライブラリ用は 2048)
+- **[[AGENTS]]**: 正本に OpenAPI JSON を追加、完成版スケッチの wiki 内
+  完全コピー禁止 (ドリフト防止) を明文化

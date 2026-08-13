@@ -222,7 +222,8 @@ pdftoppm -r 150 -f <N> -l <N> raw/<path>/foo.pdf /tmp/foo-page -png
 - **使用上の注意**（電源、電流、GPIO電流容量、GND共通）は余白でも残す。
 - **スケッチの雛形**（コード片）は tutorials/ に置く。完成版スケッチは
   プロジェクトルートの `src/main.cpp` に置く（2026-08-10 決定）。
-  ビルド手順は [[tutorials/platformio-setup]] を参照。
+  **wiki 内に完成版の完全コピーを埋め込まない**（二重管理でドリフトするため、
+  2026-08-13 追加）。ビルド手順は [[tutorials/platformio-setup]] を参照。
 - **API サーバ** 関連の設計判断 (REST 形状、認証、ノンブロッキング化等) は
   [[tutorials/wifi-api-design-notes]] に集約。MVP は [[tutorials/wifi-api-server]]。
 
@@ -233,8 +234,10 @@ pdftoppm -r 150 -f <N> -l <N> raw/<path>/foo.pdf /tmp/foo-page -png
 
 - **シークレットの扱い**: SSID / パスワードは `src/secrets.h` に分離し `.gitignore` に追加。
   完成版スケッチ (`src/main.cpp`) にはダミー値のみ書く。
-- **エンドポイント一覧の正本**: [[tutorials/wifi-api-server]] の表。
-  変更したら [[tutorials/wifi-api-design-notes]] も更新する。
+- **エンドポイント一覧の正本**: [[tutorials/wifi-api-server]] の表と
+  `GET /` の **OpenAPI JSON**（`src/main.cpp` の `kOpenApiHead` / `kOpenApiTail` /
+  `openApiDoc()`、2026-08-13 追加）。変更したら
+  [[tutorials/wifi-api-design-notes]] も更新する。
 - **メモリ管理**: RA4M1 SRAM 32 KB を常に意識。`freeRam()` 相当のヘルパで
   起動後に確認する運用を推奨 ([[api/wifis3-library#メモリ消費]])。
 - **ネットワーク越しのデバッグ**: USB シリアルが使えない構成 (本番運用) でも

@@ -75,13 +75,13 @@ POST /step?steps=2048&dir=cw&speed=2 HTTP/1.1
 > **`speed` パラメータ (2026-08-13 追加)**: 回転速度を rpm で指定 (1–60、デフォルト 5)。
 > 省略時は現在の速度を維持。指定すると以降の `/step` も同じ速度を使う。
 > 28BYJ-48 の起動周波数 (pull-in >600 Hz) を考慮し、起動確認は **speed=1 か 2** から。
-> 注意: `STEPS_PER_REV=4096` のため実回転は rpm 表示の 2 倍 (2048 steps/rev 換算)。
+> `STEPS_PER_REV=2048` なので rpm 表示は実速度と一致 (2026-08-13 実機確認)。
 > 詳細は [[log#2026-08-13]] のエントリ参照。
 
 ## 必要なもの
 
 - [[arduino-uno-r4-wifi|UNO R4 WiFi]] (RA4M1 + ESP32-S3)
-- [[uln2003|ULN2003]] driver board + [[28byj-48]] (D8–D11)
+- [[uln2003|ULN2003]] driver board + [[28byj-48]] (D7–D4)
 - [[mb102|MB102]] + 9V 1.3A アダプタ (モーター 5V 専用)
 - USB-C ケーブル (Arduino 給電 + 書き込み)
 - Wi-Fi 2.4 GHz ネットワーク (SSID + パスワード)
@@ -95,232 +95,35 @@ POST /step?steps=2048&dir=cw&speed=2 HTTP/1.1
 
 ## スケッチ (MVP)
 
-`src/main.cpp` に置く。
+完成版スケッチは **`src/main.cpp`** (2026-08-10 決定)。このページには完全なコピーを
+置かない (二重管理で内容がドリフトするため、2026-08-13 整理)。骨格は以下:
+
+```cpp
+#include <Arduino.h>
+#include <Stepper.h>
+#include <WiFiS3.h>
+#include "secrets.h"   // WIFI_SSID / WIFI_PASS (git 管理外, 本番はダミー値)
+
+// 28BYJ-48: 2048 step/rev (4 相 2 相励磁)。第 2・3 引数は相順のため入れ替え必須
+const int STEPS_PER_REV = 2048;
+const int PIN_IN1 = 7;   // Blue   → D7
+const int PIN_IN2 = 5;   // Pink   → D5
+const int PIN_IN3 = 6;   // Yellow → D6
+const int PIN_IN4 = 4;   // Orange → D4
+Stepper myStepper(STEPS_PER_REV, PIN_IN1, PIN_IN3, PIN_IN2, PIN_IN4);
+```
 
 > 📌 **実装上の注意**: UNO R4 WiFi のボードパッケージには
 > Arduino 標準の `WebServer.h` が含まれていない。
 > `WiFiS3` 同梱の **WiFiServer + WiFiClient** を直接使い、
 > HTTP リクエストを手動パースする (公式 `SimpleWebServerWiFi.ino` と同じアプローチ)。
 > 詳細は [[api/webserver-library]]。
-
-```cpp
-#include <Arduino.h>
-#include <Stepper.h>
-#include <WiFiS3.h>
-
-// ===== Wi-Fi 設定 =====
-// TODO: 自分の環境に合わせて変更 (本番では src/secrets.h に分離)
-const char* WIFI_SSID = "YOUR_SSID";
-const char* WIFI_PASS = "YOUR_PASS";
-
-// ===== ステッパー設定 =====
-const int STEPS_PER_REV = 4096;       // 28BYJ-48 (1/64 減速後)
-const int PIN_IN1 = 8;
-const int PIN_IN2 = 9;
-const int PIN_IN3 = 10;
-const int PIN_IN4 = 11;
-Stepper myStepper(STEPS_PER_REV, PIN_IN1, PIN_IN2, PIN_IN3, PIN_IN4);
-
-// ===== 状態 =====
-enum MotorState { IDLE, RUNNING, ERROR };
-MotorState state = IDLE;
-long currentPos = 0;
-
-// ===== TCP / HTTP サーバ =====
-WiFiServer server(80);
-
-String urlDecode(const String& s) {
-  String out;
-  out.reserve(s.length());
-  for (size_t i = 0; i < s.length(); i++) {
-    char c = s[i];
-    if (c == '+') out += ' ';
-    else if (c == '%' && i + 2 < s.length()) {
-      char hex[3] = {s[i + 1], s[i + 2], 0};
-      out += (char)strtoul(hex, nullptr, 16);
-      i += 2;
-    } else out += c;
-  }
-  return out;
-}
-
-void sendResponse(WiFiClient& c, int code, const char* ct, const String& body) {
-  c.print("HTTP/1.1 ");
-  c.print(code);
-  c.print(' ');
-  c.print(code == 200 ? "OK"
-       : code == 400 ? "Bad Request"
-       : code == 404 ? "Not Found"
-       : code == 409 ? "Conflict"
-       : "Error");
-  c.print("\r\nContent-Type: ");
-  c.print(ct);
-  c.print("\r\nContent-Length: ");
-  c.print(body.length());
-  c.print("\r\nConnection: close\r\n\r\n");
-  c.print(body);
-}
-
-String jsonStatus() {
-  String s = "{\"state\":\"";
-  s += (state == IDLE ? "idle" : state == RUNNING ? "running" : "error");
-  s += "\",\"position\":";
-  s += currentPos;
-  s += ",\"ip\":\"";
-  s += WiFi.localIP().toString();
-  s += "\",\"ssid\":\"";
-  s += WIFI_SSID;
-  s += "\",\"rssi\":";
-  s += WiFi.RSSI();
-  s += "}";
-  return s;
-}
-
-void handleStep(WiFiClient& c, const String& query) {
-  if (state == RUNNING) {
-    sendResponse(c, 409, "application/json", "{\"ok\":false,\"error\":\"busy\"}");
-    return;
-  }
-  long steps = 0;
-  int dir = 1;
-  int qStart = query.indexOf('?');
-  String params = (qStart >= 0) ? query.substring(qStart + 1) : "";
-  while (params.length() > 0) {
-    int amp = params.indexOf('&');
-    String kv = (amp >= 0) ? params.substring(0, amp) : params;
-    int eq = kv.indexOf('=');
-    if (eq > 0) {
-      String k = urlDecode(kv.substring(0, eq));
-      String v = urlDecode(kv.substring(eq + 1));
-      if (k == "steps") steps = v.toInt();
-      else if (k == "dir" && (v == "ccw" || v == "-1")) dir = -1;
-    }
-    if (amp < 0) break;
-    params = params.substring(amp + 1);
-  }
-  if (steps == 0) {
-    sendResponse(c, 400, "application/json", "{\"ok\":false,\"error\":\"steps=0\"}");
-    return;
-  }
-  state = RUNNING;
-  myStepper.step((int)(steps * dir));
-  currentPos += steps * dir;
-  state = IDLE;
-  String resp = "{\"ok\":true,\"requested\":";
-  resp += steps;
-  resp += ",\"direction\":\"";
-  resp += (dir > 0 ? "cw" : "ccw");
-  resp += "\"}";
-  sendResponse(c, 200, "application/json", resp);
-}
-
-void handleClient(WiFiClient& c) {
-  String reqLine, method, path;
-  unsigned long timeout = millis() + 2000;
-  while (c.connected() && millis() < timeout) {
-    if (c.available()) {
-      char ch = c.read();
-      if (ch == '\n') {
-        if (reqLine.length() == 0) break;
-        int sp1 = reqLine.indexOf(' ');
-        int sp2 = reqLine.indexOf(' ', sp1 + 1);
-        if (sp1 > 0 && sp2 > sp1) {
-          method = reqLine.substring(0, sp1);
-          path = reqLine.substring(sp1 + 1, sp2);
-        }
-        reqLine = "";
-      } else if (ch != '\r') {
-        reqLine += ch;
-      }
-    }
-  }
-
-  // GET / → OpenAPI JSON (完全版は src/main.cpp の kOpenApiHead/kOpenApiTail 参照)
-  if (method == "GET" && path == "/") {
-    sendResponse(c, 200, "application/json", openApiDoc());
-    return;
-  }
-  if (method == "GET" && (path == "/index.html" || path.startsWith("/?"))) {
-    String html = "<h1>UNO R4 WiFi Stepper Server</h1>"
-                  "<p>API 仕様は <code>GET /</code> で OpenAPI JSON を取得。</p>"
-                  "<ul>"
-                  "<li>GET /status</li>"
-                  "<li>POST /step?steps=N&amp;dir=cw|ccw&amp;speed=RPM(1-60)</li>"
-                  "<li>POST /stop (全ピン LOW で通電遮断)</li>"
-                  "</ul>";
-    sendResponse(c, 200, "text/html; charset=utf-8", html);
-    return;
-  }
-  if (method == "GET" && path.startsWith("/status")) {
-    sendResponse(c, 200, "application/json", jsonStatus());
-    return;
-  }
-  if (method == "POST" && path.startsWith("/step")) {
-    handleStep(c, path);
-    return;
-  }
-  if (method == "POST" && path.startsWith("/stop")) {
-    if (state == RUNNING) {
-      sendResponse(c, 409, "application/json", "{\"ok\":false,\"error\":\"busy\"}");
-      return;
-    }
-    // step() 完了後も最後の 2 相は励磁されたまま → 全ピン LOW で通電遮断
-    digitalWrite(PIN_IN1, LOW);
-    digitalWrite(PIN_IN2, LOW);
-    digitalWrite(PIN_IN3, LOW);
-    digitalWrite(PIN_IN4, LOW);
-    sendResponse(c, 200, "application/json",
-                 "{\"ok\":true,\"note\":\"coils de-energized (all pins LOW)\"}");
-    return;
-  }
-  sendResponse(c, 404, "application/json", "{\"ok\":false,\"error\":\"not found\"}");
-}
-
-void setup() {
-  Serial.begin(9600);
-  while (!Serial) delay(10);
-  Serial.println("Booting UNO R4 WiFi Stepper Server...");
-
-  myStepper.setSpeed(15);
-
-  if (WiFi.status() == WL_NO_MODULE) {
-    Serial.println("Communication with WiFi module failed!");
-    while (true) delay(1000);
-  }
-  String fv = WiFi.firmwareVersion();
-  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
-    Serial.print("Please upgrade the firmware (current: ");
-    Serial.print(fv); Serial.println(")");
-  }
-
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  Serial.print("Connecting Wi-Fi");
-  unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) {
-    delay(500);
-    Serial.print(".");
-  }
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println();
-    Serial.print("Connected. IP: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println();
-    Serial.println("Wi-Fi connect failed. Server will still start.");
-  }
-
-  server.begin();
-  Serial.println("HTTP server started on port 80.");
-}
-
-void loop() {
-  WiFiClient c = server.available();
-  if (c) {
-    handleClient(c);
-    c.stop();
-  }
-}
-```
+>
+> 完全な実装は `src/main.cpp` 参照:
+> - `sendResponse()` / `urlDecode()` / `handleClient()` のディスパッチ骨格
+> - `GET /` の OpenAPI ドキュメント (`kOpenApiHead` / `kOpenApiTail` / `openApiDoc()`)
+> - `handleStep()` の `speed` パラメータ処理 (1–60 rpm, 省略時は現在値維持)
+> - `POST /stop` の全ピン LOW による通電遮断 (RUNNING 中は 409)
 
 ## ビルド & 書き込み
 
@@ -371,7 +174,8 @@ curl -X POST --data-binary "2048 cw" -H "Content-Type: text/plain" \
 curl -X POST --data-binary "-2048" http://192.168.1.42/step
 ```
 
-ブラウザから `http://<IP>/` を開くと HTML ヘルプが見える。
+ブラウザから `http://<IP>/index.html` を開くと HTML ヘルプが見える
+(`GET /` は OpenAPI JSON を返す)。
 
 ## 既知の制約 (MVP)
 
