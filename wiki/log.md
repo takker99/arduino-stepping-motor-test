@@ -502,3 +502,22 @@ Stepper ライブラリは `step()` 完了後も最後の 2 相を**励磁し続
 1. (任意) 連続動作確認: `dir=ccw` 逆回転 / 複数回転 / 角度指定 (steps=512 = 90°)
 2. `/stop` の通電遮断化 (全ピン LOW) — 常時通電の回避 (要コード変更)
 3. 完了したら本件のデバッグを [[overview]] に反映して一区切り
+
+## [2026-08-13] update | `/stop` を通電遮断 (全ピン LOW) に実装
+
+ホールド中の常時通電 (~350 mA, 発熱) を回避するため `/stop` を実装。
+
+- **変更前**: MVP の no-op (200 を返すだけ)
+- **変更後**: IDLE 状態なら 4 ピン (D7–D4) をすべて LOW にし、保持トルクを解除
+  - RUNNING 中は 409 (busy) — `step()` がブロックするため実行中の中断は不可
+    (ノンブロッキング化は [[tutorials/wifi-api-design-notes]] の将来課題)
+  - 次の `/step` で Stepper ライブラリがシーケンスを書き直すので再励磁 OK
+- ビルド成功 (RAM 16.0% / Flash 22.3%)
+
+### 作成・更新
+
+- `src/main.cpp` — `/stop` 実装 (全ピン LOW)
+- [[tutorials/wifi-api-server]] — エンドポイント表・スケッチ・既知の制約を更新
+- [[tutorials/wifi-api-design-notes]] — ノンブロッキング化の動機を訂正
+- [[overview]] — API 表・次のアクションを更新
+- [[log]] — 本エントリ追記

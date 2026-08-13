@@ -93,7 +93,9 @@ MQTT は [[sources/arduino-uno-r4-wifi-datasheet|Arduino Cloud 統合]] の文�
 
 MVP の最大の問題は `step()` が同期ループで数万ステップを処理するため、
 その間 HTTP リクエストが来ても `handleClient()` が呼ばれず、
-`/stop` が事実上 no-op になること。
+`/stop` が実行中の動作を中断できないこと
+(2026-08-13 時点の `/stop` は IDLE 中の**通電遮断のみ**実装)。
+非ブロッキング化により「実行中に割り込んで停止」が可能になる。
 
 ### 対策案: ステートマシン化
 

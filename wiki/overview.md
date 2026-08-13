@@ -139,7 +139,7 @@ updated: 2026-08-12
 | `GET` | `/` | ヘルスチェック (HTML) |
 | `GET` | `/status` | 現在状態 (JSON) |
 | `POST` | `/step?steps=N&dir=cw\|ccw&speed=RPM` | ステップ実行 (speed 1–60 rpm, 省略時は現在値) |
-| `POST` | `/stop` | 動作中断 (MVP では no-op) |
+| `POST` | `/stop` | 通電遮断 (全ピン LOW, ホールド解除) |
 
 STA モード (自宅 Wi-Fi に接続) で `192.168.1.x:80` で待ち受け。
 スケッチは [[tutorials/wifi-api-server]] 参照。
@@ -151,9 +151,8 @@ Wi-Fi API サーバ疎通済み (192.168.11.3)、`POST /step?steps=N&dir=cw|ccw&
 詳細は [[log#2026-08-13]] のエントリ群参照。
 
 1. (任意) 連続動作確認: `dir=ccw` 逆回転 / 複数回転 / 角度指定 (steps=512 = 90°)
-2. `/stop` の通電遮断化 (全ピン LOW) — ホールド中の常時通電 ~350 mA と発熱の回避
-3. STEPS_PER_REV 2048・相順問題の知見を次回の回路設計に反映
-4. 将来: AP フォールバック / `/stop` のノンブロッキング化 / 認証
+2. STEPS_PER_REV 2048・相順問題の知見を次回の回路設計に反映
+3. 将来: AP フォールバック / `/stop` のノンブロッキング化 (実行中の中断) / 認証
 
 ## 関連ページ
 

@@ -174,8 +174,17 @@ void handleClient(WiFiClient& c) {
   }
 
   if (method == "POST" && (path == "/stop" || path.startsWith("/stop?"))) {
+    if (state == RUNNING) {
+      sendResponse(c, 409, "application/json", "{\"ok\":false,\"error\":\"busy\"}");
+      return;
+    }
+    // step() 完了後も最後の 2 相は励磁されたまま → 全ピン LOW で通電遮断
+    digitalWrite(PIN_IN1, LOW);
+    digitalWrite(PIN_IN2, LOW);
+    digitalWrite(PIN_IN3, LOW);
+    digitalWrite(PIN_IN4, LOW);
     sendResponse(c, 200, "application/json",
-                 "{\"ok\":true,\"note\":\"MVP: stop is no-op while step() blocks\"}");
+                 "{\"ok\":true,\"note\":\"coils de-energized (all pins LOW)\"}");
     return;
   }
 

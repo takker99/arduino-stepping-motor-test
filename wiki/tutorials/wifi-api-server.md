@@ -25,7 +25,7 @@ updated: 2026-08-12
 | `GET` | `/` | ヘルスチェック (HTML) | — |
 | `GET` | `/status` | 現在状態 (JSON) | — |
 | `POST` | `/step` | ステップ実行 | クエリ `?steps=N&dir=cw\|ccw&speed=RPM` または body `N cw` |
-| `POST` | `/stop` | 実行中の動作を中断 | — |
+| `POST` | `/stop` | 通電遮断 (全ピン LOW, ホールド解除) | — |
 
 ### レスポンス例
 
@@ -234,8 +234,17 @@ void handleClient(WiFiClient& c) {
     return;
   }
   if (method == "POST" && path.startsWith("/stop")) {
+    if (state == RUNNING) {
+      sendResponse(c, 409, "application/json", "{\"ok\":false,\"error\":\"busy\"}");
+      return;
+    }
+    // step() 完了後も最後の 2 相は励磁されたまま → 全ピン LOW で通電遮断
+    digitalWrite(PIN_IN1, LOW);
+    digitalWrite(PIN_IN2, LOW);
+    digitalWrite(PIN_IN3, LOW);
+    digitalWrite(PIN_IN4, LOW);
     sendResponse(c, 200, "application/json",
-                 "{\"ok\":true,\"note\":\"MVP: stop is no-op while step() blocks\"}");
+                 "{\"ok\":true,\"note\":\"coils de-energized (all pins LOW)\"}");
     return;
   }
   sendResponse(c, 404, "application/json", "{\"ok\":false,\"error\":\"not found\"}");
@@ -338,8 +347,9 @@ curl -X POST --data-binary "-2048" http://192.168.1.42/step
 ## 既知の制約 (MVP)
 
 - **STA 専用**: Wi-Fi 接続失敗時サーバは立ち上がるが到達不能
-- **`/stop` は no-op**: `step()` が同期的に長時間ブロックするため、
-  実行中の動作を HTTP から割り込む手段がない (要ノンブロッキング化)
+- **`/stop` は通電遮断のみ (2026-08-13 実装)**: ホールド中の 2 相を全ピン LOW で
+  遮断し、保持トルクを解除する。`step()` が同期的にブロックするため
+  **実行中の動作は中断できない** (RUNNING 中は 409 を返す。要ノンブロッキング化)
 - **認証なし**: 同一 LAN 内の誰でも操作可能 (本プロジェクトは自宅 LAN 想定)
 - **JSON パースなし**: クエリ or text/plain のみ。JSON body は [[api/webserver-library]]
   の `ArduinoJson` 例を参照
