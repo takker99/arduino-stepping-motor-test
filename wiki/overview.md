@@ -136,7 +136,7 @@ updated: 2026-08-12
 
 | メソッド | パス | 用途 |
 | --- | --- | --- |
-| `GET` | `/` | ヘルスチェック (HTML) |
+| `GET` | `/` | OpenAPI ドキュメント (JSON, 3.0.3) |
 | `GET` | `/status` | 現在状態 (JSON) |
 | `POST` | `/step?steps=N&dir=cw\|ccw&speed=RPM` | ステップ実行 (speed 1–60 rpm, 省略時は現在値) |
 | `POST` | `/stop` | 通電遮断 (全ピン LOW, ホールド解除) |

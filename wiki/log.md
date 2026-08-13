@@ -521,3 +521,43 @@ Stepper ライブラリは `step()` 完了後も最後の 2 相を**励磁し続
 - [[tutorials/wifi-api-design-notes]] — ノンブロッキング化の動機を訂正
 - [[overview]] — API 表・次のアクションを更新
 - [[log]] — 本エントリ追記
+
+## [2026-08-13] update | `GET /` で OpenAPI JSON を返すように
+
+API の全体像 (エンドポイント・パラメータ・レスポンス) を手元で確認できるよう、
+**`GET /` が OpenAPI 3.0.3 の JSON を返す**ように変更 (旧: HTML ヘルプ)。
+
+- 構成: `kOpenApiHead` + `WiFi.localIP()` + `kOpenApiTail` を連結 (Flash 常駐の
+  静的文字列 + 動的 IP。RAM 消費は String 1 本分のみ)
+- 収録内容: `paths` = `/`, `/status`, `/step` (steps/dir/speed パラメータ),
+  `/stop`。`components/schemas` = `Status`, `StepResult`
+- `servers[0].url` には現在の IP が自動で入る → Swagger UI / Redoc / Postman
+  に貼れば API ブラウザとして使える
+- HTML ヘルプは `/index.html` に移動
+- JSON の妥当性は Python で検証済み (パース成功, 4 パス + 2 スキーマ)
+- ビルド成功 (RAM 16.0% / Flash 23.6%)
+
+### 作成・更新
+
+- `src/main.cpp` — OpenAPI ドキュメント追加 (`GET /`), `/index.html` 分離
+- [[tutorials/wifi-api-server]] — エンドポイント表・レスポンス例・curl 例を更新
+- [[overview]] — API 表を更新
+- [[log]] — 本エントリ追記
+
+## [2026-08-13] note | 動作速度レンジ確認 (実機)
+
+`speed` パラメータで各 rpm を実機確認した結果:
+
+| rpm | steps/s | 結果 |
+| --- | --- | --- |
+| 1, 5, 10, 15 | 68 / 170 / 341 / 512 | **回転 OK** |
+| 20, 30, 60 | 682 / 1024 / 2048 | 唸るだけで回らない (失歩スタール) |
+
+- 起動限界は **15 rpm (512 steps/s) と 20 rpm (682 steps/s) の間**。
+  データシートの pull-in ">600Hz" とほぼ一致 (実機はギアボックス負荷で
+  少し低めに出る)
+- 1 rpm は 1 回転 60 秒と非常に遅いが正常に回転する (最初の確認漏れは
+  観察時間不足で、回らない原因は無し)
+- 20 rpm 以上を回すには加速度ランプが必要 ([[tutorials/wifi-api-design-notes]]
+  の将来課題)。実用上は **1–15 rpm が使用レンジ**
+- ギアボックス損傷の疑いは無し (全速度で回転・音とも正常)

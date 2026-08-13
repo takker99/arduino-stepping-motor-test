@@ -18,6 +18,131 @@ int motorSpeed = 5;  // 現在の速度 (rpm), /step の speed パラメータ�
 
 WiFiServer server(80);
 
+// ===== OpenAPI ドキュメント (GET /) =====
+// head + 現在の IP + tail を連結して返す
+const char kOpenApiHead[] = R"json({
+  "openapi": "3.0.3",
+  "info": {
+    "title": "UNO R4 WiFi Stepper API",
+    "description": "HTTP API to control a 28BYJ-48 stepper motor via ULN2003 (UNO R4 WiFi).",
+    "version": "0.3.0"
+  },
+  "servers": [
+    {
+      "url": "http://)json";
+const char kOpenApiTail[] = R"json("
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Return this OpenAPI document",
+        "responses": {
+          "200": {
+            "description": "OpenAPI JSON",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "summary": "Current state",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Status" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/step": {
+      "post": {
+        "summary": "Run the motor (blocking until finished)",
+        "parameters": [
+          {
+            "name": "steps",
+            "in": "query",
+            "description": "Number of steps (1 revolution = 2048 steps)",
+            "required": true,
+            "schema": { "type": "integer", "minimum": 1 }
+          },
+          {
+            "name": "dir",
+            "in": "query",
+            "description": "Direction (default: cw)",
+            "schema": { "type": "string", "enum": ["cw", "ccw"] }
+          },
+          {
+            "name": "speed",
+            "in": "query",
+            "description": "Speed in rpm (1-60, default: current speed)",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 60 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Step finished",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StepResult" }
+              }
+            }
+          },
+          "400": { "description": "Bad Request (steps=0)" },
+          "409": { "description": "Conflict (busy)" }
+        }
+      }
+    },
+    "/stop": {
+      "post": {
+        "summary": "De-energize all coils (all pins LOW)",
+        "responses": {
+          "200": { "description": "Coils de-energized" },
+          "409": { "description": "Conflict (busy)" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Status": {
+        "type": "object",
+        "properties": {
+          "state": { "type": "string", "enum": ["idle", "running", "error"] },
+          "position": { "type": "integer", "description": "Accumulated steps" },
+          "speed": { "type": "integer", "description": "Current speed (rpm)" },
+          "ssid": { "type": "string" },
+          "ip": { "type": "string" },
+          "rssi": { "type": "integer" }
+        }
+      },
+      "StepResult": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "requested": { "type": "integer" },
+          "direction": { "type": "string", "enum": ["cw", "ccw"] },
+          "speed": { "type": "integer" }
+        }
+      }
+    }
+  }
+})json";
+
+String openApiDoc() {
+  String s = String(kOpenApiHead);
+  s += WiFi.localIP().toString();
+  s += kOpenApiTail;
+  return s;
+}
+
 String urlDecode(const String& s) {
   String out;
   out.reserve(s.length());
@@ -152,12 +277,19 @@ void handleClient(WiFiClient& c) {
     }
   }
 
-  if (method == "GET" && (path == "/" || path == "/index.html")) {
+  if (method == "GET" && path == "/") {
+    sendResponse(c, 200, "application/json", openApiDoc());
+    return;
+  }
+
+  if (method == "GET" && path == "/index.html") {
     String html = "<h1>UNO R4 WiFi Stepper Server</h1>"
+                  "<p>API 仕様は <code>GET /</code> で OpenAPI JSON を取得。</p>"
                   "<ul>"
+                  "<li>GET / (OpenAPI JSON)</li>"
                   "<li>GET /status</li>"
                   "<li>POST /step?steps=N&amp;dir=cw|ccw&amp;speed=RPM(1-60)</li>"
-                  "<li>POST /stop</li>"
+                  "<li>POST /stop (全ピン LOW で通電遮断)</li>"
                   "</ul>";
     sendResponse(c, 200, "text/html; charset=utf-8", html);
     return;

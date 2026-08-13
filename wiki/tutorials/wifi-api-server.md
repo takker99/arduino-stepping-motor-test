@@ -22,12 +22,32 @@ updated: 2026-08-12
 
 | メソッド | パス | 用途 | ボディ / クエリ |
 | --- | --- | --- | --- |
-| `GET` | `/` | ヘルスチェック (HTML) | — |
+| `GET` | `/` | **OpenAPI ドキュメント (JSON)** (2026-08-13 追加) | — |
+| `GET` | `/index.html` | ヘルプ (HTML) | — |
 | `GET` | `/status` | 現在状態 (JSON) | — |
 | `POST` | `/step` | ステップ実行 | クエリ `?steps=N&dir=cw\|ccw&speed=RPM` または body `N cw` |
 | `POST` | `/stop` | 通電遮断 (全ピン LOW, ホールド解除) | — |
 
+> `GET /` を叩くと **OpenAPI 3.0.3 の JSON** が返る。エンドポイント一覧・
+> パラメータ・レスポンスのスキーマ (components/schemas) が全部載っているので、
+> API を忘れたらまずこれを見る。`servers[0].url` は現在の IP が自動で入る。
+> Swagger UI / Redoc / Postman に貼り付けて見ることもできる。
+
 ### レスポンス例
+
+```http
+GET / HTTP/1.1
+```
+
+```json
+{
+  "openapi": "3.0.3",
+  "info": { "title": "UNO R4 WiFi Stepper API", "version": "0.3.0" },
+  "servers": [{ "url": "http://192.168.11.3" }],
+  "paths": { "/": {}, "/status": {}, "/step": {}, "/stop": {} },
+  "components": { "schemas": { "Status": {}, "StepResult": {} } }
+}
+```
 
 ```http
 GET /status HTTP/1.1
@@ -215,12 +235,18 @@ void handleClient(WiFiClient& c) {
     }
   }
 
-  if (method == "GET" && (path == "/" || path.startsWith("/?"))) {
+  // GET / → OpenAPI JSON (完全版は src/main.cpp の kOpenApiHead/kOpenApiTail 参照)
+  if (method == "GET" && path == "/") {
+    sendResponse(c, 200, "application/json", openApiDoc());
+    return;
+  }
+  if (method == "GET" && (path == "/index.html" || path.startsWith("/?"))) {
     String html = "<h1>UNO R4 WiFi Stepper Server</h1>"
+                  "<p>API 仕様は <code>GET /</code> で OpenAPI JSON を取得。</p>"
                   "<ul>"
                   "<li>GET /status</li>"
-                  "<li>POST /step?steps=N&amp;dir=cw|ccw</li>"
-                  "<li>POST /stop</li>"
+                  "<li>POST /step?steps=N&amp;dir=cw|ccw&amp;speed=RPM(1-60)</li>"
+                  "<li>POST /stop (全ピン LOW で通電遮断)</li>"
                   "</ul>";
     sendResponse(c, 200, "text/html; charset=utf-8", html);
     return;
@@ -322,8 +348,11 @@ pio device monitor    # シリアルで IP アドレスを確認
 シリアルモニタに IP が出たら、同じ LAN 内の端末から:
 
 ```bash
-# ヘルスチェック
+# API 仕様 (OpenAPI JSON)
 curl http://192.168.1.42/
+
+# ヘルスチェック (HTML)
+curl http://192.168.1.42/index.html
 
 # ステータス
 curl http://192.168.1.42/status
