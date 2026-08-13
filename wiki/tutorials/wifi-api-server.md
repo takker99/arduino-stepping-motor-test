@@ -24,7 +24,7 @@ updated: 2026-08-12
 | --- | --- | --- | --- |
 | `GET` | `/` | ヘルスチェック (HTML) | — |
 | `GET` | `/status` | 現在状態 (JSON) | — |
-| `POST` | `/step` | ステップ実行 | クエリ `?steps=N&dir=cw\|ccw` または body `N cw` |
+| `POST` | `/step` | ステップ実行 | クエリ `?steps=N&dir=cw\|ccw&speed=RPM` または body `N cw` |
 | `POST` | `/stop` | 実行中の動作を中断 | — |
 
 ### レスポンス例
@@ -37,6 +37,7 @@ GET /status HTTP/1.1
 {
   "state": "idle",         // "idle" | "running" | "error"
   "position": 0,           // 累積ステップ数 (任意)
+  "speed": 5,              // 現在の速度 rpm (2026-08-13 追加)
   "ssid": "MyHomeWiFi",
   "ip": "192.168.1.42",
   "rssi": -55
@@ -44,12 +45,18 @@ GET /status HTTP/1.1
 ```
 
 ```http
-POST /step?steps=2048&dir=cw HTTP/1.1
+POST /step?steps=2048&dir=cw&speed=2 HTTP/1.1
 ```
 
 ```json
-{ "ok": true, "requested": 2048, "direction": "cw" }
+{ "ok": true, "requested": 2048, "direction": "cw", "speed": 2 }
 ```
+
+> **`speed` パラメータ (2026-08-13 追加)**: 回転速度を rpm で指定 (1–60、デフォルト 5)。
+> 省略時は現在の速度を維持。指定すると以降の `/step` も同じ速度を使う。
+> 28BYJ-48 の起動周波数 (pull-in >600 Hz) を考慮し、起動確認は **speed=1 か 2** から。
+> 注意: `STEPS_PER_REV=4096` のため実回転は rpm 表示の 2 倍 (2048 steps/rev 換算)。
+> 詳細は [[log#2026-08-13]] のエントリ参照。
 
 ## 必要なもの
 
@@ -314,6 +321,9 @@ curl http://192.168.1.42/status
 
 # 半回転 (2048 step) 時計回り
 curl -X POST "http://192.168.1.42/step?steps=2048&dir=cw"
+
+# 低速での起動確認 (推奨: speed=1 か 2)
+curl -X POST "http://192.168.1.42/step?steps=2048&dir=cw&speed=1"
 
 # text/plain body でも可
 curl -X POST --data-binary "2048 cw" -H "Content-Type: text/plain" \

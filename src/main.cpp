@@ -13,6 +13,7 @@ Stepper myStepper(STEPS_PER_REV, PIN_IN1, PIN_IN2, PIN_IN3, PIN_IN4);
 enum MotorState { IDLE, RUNNING, ERROR };
 MotorState state = IDLE;
 long currentPos = 0;
+int motorSpeed = 5;  // 現在の速度 (rpm), /step の speed パラメータで変更可
 
 WiFiServer server(80);
 
@@ -57,6 +58,8 @@ String jsonStatus() {
   s += (state == IDLE ? "idle" : state == RUNNING ? "running" : "error");
   s += "\",\"position\":";
   s += currentPos;
+  s += ",\"speed\":";
+  s += motorSpeed;
   s += ",\"ip\":\"";
   s += WiFi.localIP().toString();
   s += "\",\"ssid\":\"";
@@ -75,6 +78,7 @@ void handleStep(WiFiClient& c, const String& query) {
 
   long steps = 0;
   int dir = 1;
+  int speed = 0;  // 0 = 指定なし (現在の speed を維持)
 
   int qStart = query.indexOf('?');
   String params = (qStart >= 0) ? query.substring(qStart + 1) : "";
@@ -90,6 +94,7 @@ void handleStep(WiFiClient& c, const String& query) {
         if (v == "ccw" || v == "-1") dir = -1;
         else dir = 1;
       }
+      else if (k == "speed") speed = v.toInt();
     }
     if (amp < 0) break;
     params = params.substring(amp + 1);
@@ -98,6 +103,13 @@ void handleStep(WiFiClient& c, const String& query) {
   if (steps == 0) {
     sendResponse(c, 400, "application/json", "{\"ok\":false,\"error\":\"steps=0\"}");
     return;
+  }
+
+  if (speed > 0) {
+    if (speed < 1) speed = 1;
+    if (speed > 60) speed = 60;
+    motorSpeed = speed;
+    myStepper.setSpeed(speed);
   }
 
   state = RUNNING;
@@ -109,7 +121,9 @@ void handleStep(WiFiClient& c, const String& query) {
   resp += steps;
   resp += ",\"direction\":\"";
   resp += (dir > 0 ? "cw" : "ccw");
-  resp += "\"}";
+  resp += "\",\"speed\":";
+  resp += motorSpeed;
+  resp += "}";
   sendResponse(c, 200, "application/json", resp);
 }
 
@@ -141,7 +155,7 @@ void handleClient(WiFiClient& c) {
     String html = "<h1>UNO R4 WiFi Stepper Server</h1>"
                   "<ul>"
                   "<li>GET /status</li>"
-                  "<li>POST /step?steps=N&amp;dir=cw|ccw</li>"
+                  "<li>POST /step?steps=N&amp;dir=cw|ccw&amp;speed=RPM(1-60)</li>"
                   "<li>POST /stop</li>"
                   "</ul>";
     sendResponse(c, 200, "text/html; charset=utf-8", html);
@@ -174,7 +188,7 @@ void setup() {
   }
   Serial.println("Booting UNO R4 WiFi Stepper Server...");
 
-  myStepper.setSpeed(15);
+  myStepper.setSpeed(5);
 
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with WiFi module failed!");
