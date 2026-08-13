@@ -22,7 +22,7 @@ wiki の全ページを **カテゴリ別** に整理したカタログ。
 | [[ams1117]] | MB102 搭載 1A LDO (熱設計の根拠) | ldo, regulator |
 | [[stepper-motor]] | ステッピングモーター一般 (unipolar/bipolar, 励磁シーケンス) | stepper, theory |
 | [[unipolar-vs-bipolar]] | unipolar vs bipolar の構造・駆動比較 | stepper, theory |
-| [[28byj-48]] | 5V, 4 相, 1/64 減速, 4096 step/rev unipolar モーター | stepper, unipolar |
+| [[28byj-48]] | 5V, 4 相, 1/64 減速, 2048 step/rev unipolar モーター | stepper, unipolar |
 | [[uln2003]] | 7ch NPN ダーリントンアレイ (500 mA/ch) | driver, darlington |
 | [[triaxial-test]] | 最終用途: 三軸試験機 (ひずみゲージ + 80 Hz 計測, ノイズ分析) | test-equipment, strain-gauge, measurement |
 
@@ -38,6 +38,7 @@ wiki の全ページを **カテゴリ別** に整理したカタログ。
 | [[sources/arduino-uno-r4-minima-datasheet]] | UNO R4 Minima datasheet (旧方針, 参考) | ABX00080-datasheet.pdf |
 | [[sources/28byj-48-datasheet]] | 28BYJ-48 Kiatronics datasheet | step-motor-5v-28byj48-datasheet.pdf |
 | [[sources/uln2003a-datasheet]] | ULN2003A TI datasheet (SLRS027) | uln2003a-slrs027o-ti.pdf |
+| [[sources/stupiddog-28byj48-tutorial]] | 28BYJ-48 駆動の実機検証記事 (Stepper ライブラリの相順問題) | stupiddog.jp/note/archives/1235 (Web) |
 
 ## Tutorials (チュートリアル)
 
@@ -77,6 +78,7 @@ wiki の全ページを **カテゴリ別** に整理したカタログ。
 - [[stepper-motor]], [[unipolar-vs-bipolar]], [[28byj-48]]
 - [[tutorials/stepper-library-examples]], [[tutorials/unipolar-stepper-motor]]
 - [[api/stepper-library]]
+- [[sources/stupiddog-28byj48-tutorial]]
 
 ### arduino / mcu
 

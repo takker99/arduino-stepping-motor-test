@@ -3,12 +3,13 @@
 #include <WiFiS3.h>
 #include "secrets.h"
 
-const int STEPS_PER_REV = 4096;
+const int STEPS_PER_REV = 2048;  // 28BYJ-48 1 回転 (4 相 2 相励磁シーケンス)
 const int PIN_IN1 = 7;
 const int PIN_IN2 = 6;
 const int PIN_IN3 = 5;
 const int PIN_IN4 = 4;
-Stepper myStepper(STEPS_PER_REV, PIN_IN1, PIN_IN2, PIN_IN3, PIN_IN4);
+// 相順問題: 第 2・3 引数 (IN2/IN3) は入れ替えて渡す (2026-08-13 確定)
+Stepper myStepper(STEPS_PER_REV, PIN_IN1, PIN_IN3, PIN_IN2, PIN_IN4);
 
 enum MotorState { IDLE, RUNNING, ERROR };
 MotorState state = IDLE;
